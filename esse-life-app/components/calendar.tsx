@@ -142,9 +142,13 @@ const CalendarComponent: FC<CalendarProps> = ({ closedDays }) => {
                     <DayPopupComponent
                         isOpen={isPopupOpen}
                         onClose={() => setPopupOpen(false)}
-                        selectedDay={selectedDay} // Seçilen günü DayPopupComponent'e iletiyoruz
-                        reservations={reservations} // Rezervasyonları DayPopupComponent'e iletiyoruz
-                    />                )}
+                        selectedDay={selectedDay}
+                        reservations={
+                            selectedConsultant
+                                ? filterReservationsByConsultant(reservations, selectedConsultant)
+                                : reservations // Danışman seçilmediyse tüm rezervasyonları göster
+                        }
+                    />             )}
             </div>
         </Box>
     );
