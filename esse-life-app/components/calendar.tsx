@@ -28,18 +28,27 @@ const CalendarComponent: FC<CalendarProps> = ({ closedDays }) => {
     const roundedNow = roundToNearestMinutes(nowDate, OPENING_HOURS_INTERVAL);
     const closing = parse(closingTime, 'kk:mm', nowDate);
     const tooLate = !isBefore(roundedNow, closing);
+    interface Reservation {
+        id: number;
+        customerName: string;
+        consultant: string;
+        reservationCompleted: boolean;
+        reservationDateTime: string;
+    }
+
+// reservations dizisini bu türle tipikleştirin
+    const [reservations, setReservations] = useState<Reservation[]>([]);
     if (tooLate) closedDays.push(formatISO(new Date().setHours(0, 0, 0, 0)));
 
     const [date, setDate] = useState<DateTime>({
         justDate: null,
         dateTime: null,
     });
-    const [customers, setCustomers] = useState([]); // API'den gelen müşteri verilerini saklamak için bir state
     useEffect(() => {
         const fetchCustomers = async () => {
             try {
-                const response = await api.get("/customers"); // api modülünü kullanarak isteği yapın
-                setCustomers(response.data);
+                const response = await api.get("/reservations"); // api modülünü kullanarak isteği yapın
+                setReservations(response.data);
                 console.log(response.data);
             } catch (error) {
                 console.error("Error fetching options:", error);
@@ -47,13 +56,31 @@ const CalendarComponent: FC<CalendarProps> = ({ closedDays }) => {
         };
         fetchCustomers();
     }, []);
+    // Ardından, tarihleri alın ve doğum günü tarihleri ile karşılaştırın
+    // Özel içerik oluşturmak için kullanılan fonksiyon
     const getCustomTileContent = (date: Date) => {
+        const birthdayDate = new Date('2023-10-04'); // Doğum günü tarihi
 
-        const birthdayDate = new Date('2023-10-04');
+        // Eşleşen rezervasyonları bulun
+        const matchingReservations = reservations.filter((reservation) => {
+            const reservationDate = new Date(reservation.reservationDateTime);
+            return isSameDay(date, reservationDate);
+        });
 
-
-        if (isSameDay(date, birthdayDate)) {
-            return <span style={{ color: 'red' }}>Bugün Doğum Günü</span>;
+        // Eğer doğum günü veya rezervasyon varsa göster
+        if (isSameDay(date, birthdayDate) || matchingReservations.length > 0) {
+            return (
+                <div>
+                    {isSameDay(date, birthdayDate) && (
+                        <span style={{ color: 'red' }}>Bugün Doğum Günü</span>
+                    )}
+                    {matchingReservations.map((reservation) => (
+                        <div key={reservation.id}>
+                            {reservation.customerName} için rezervasyon
+                        </div>
+                    ))}
+                </div>
+            );
         }
 
         return null;
