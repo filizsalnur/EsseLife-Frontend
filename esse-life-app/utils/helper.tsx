@@ -30,37 +30,25 @@ export const getOpeningTimes = (startDate: Date, openingTime: string, closingTim
     let minutes: number;
 
     if (isToday) {
-        // Bugünün işleyişi
-
-        // Şu anki zamanı bulun
         const currentTime = now;
 
-        // Açılış ve kapanış saatlerini yeniden hesaplayın
         const opening = parse(openingTime, 'kk:mm', startDate);
         const closing = parse(closingTime, 'kk:mm', startDate);
 
-        // Şu anki zaman, açılış ve kapanış saatleri arasında mı kontrol edin
         if (isBefore(currentTime, opening)) {
-            // Açılış saatinden önce: En erken açılış saatini döndürün
             hours = getHours(opening);
             minutes = getMinutes(opening);
         } else if (isBefore(currentTime, closing)) {
-            // Açılış saatinden sonra, kapanış saatinden önce: Şu anki saati döndürün
             hours = getHours(currentTime);
             minutes = getMinutes(currentTime);
         } else {
-            // Kapanış saatinden sonra: Hata verin
             throw new Error('No more bookings today');
         }
     } else {
-        // Diğer günlerin işleyişi
-
-        // Açılış saatlerini kullanın
         hours = getHours(parse(openingTime, 'kk:mm', startDate));
         minutes = getMinutes(parse(openingTime, 'kk:mm', startDate));
     }
 
-    // Kalan kod
     const beginning = add(startDate, { hours, minutes });
     const end = add(startDate, { hours: getHours(parse(closingTime, 'kk:mm', startDate)), minutes: getMinutes(parse(closingTime, 'kk:mm', startDate)) });
     const interval = OPENING_HOURS_INTERVAL;

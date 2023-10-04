@@ -1,5 +1,5 @@
 .react-calendar {
-    width: 450px;
+    width: 90%;
     max-width: 100%;
     background: white;
     border-radius: 15px;
@@ -73,11 +73,11 @@
 }
 /* Each day should be round when hovered */
 .react-calendar__month-view__days__day {
-    padding: 5px;
+    padding: 5px; /* Kenar boşluklarını ayarlayın */
     background-clip: content-box !important;
     border-radius: 15px !important;
+    height: 100px;
 }
-
 .react-calendar__navigation__label__labelText {
     font-weight: 500;
     font-size: 1.05em;

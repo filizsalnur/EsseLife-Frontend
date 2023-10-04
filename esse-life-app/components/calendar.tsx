@@ -1,13 +1,16 @@
 'use client'
-import {format, formatISO, isBefore, parse} from 'date-fns'
+import {format, formatISO, isBefore, isSameDay, parse} from 'date-fns'
 import dynamic from 'next/dynamic'
-
 import { FC, useEffect, useState } from 'react'
 import { now, OPENING_HOURS_INTERVAL } from '@/constants/config'
 import { getOpeningTimes, roundToNearestMinutes } from '@/utils/helper'
 import { DateTime } from '@/utils/types'
 import './calendar.css'
 import {Box} from "@mui/system";
+import axios from "axios";
+import api from '@/service/api';
+
+
 const DynamicCalendar = dynamic(() => import('react-calendar'), { ssr: false })
 
 interface CalendarProps {
@@ -31,7 +34,30 @@ const CalendarComponent: FC<CalendarProps> = ({ closedDays }) => {
         justDate: null,
         dateTime: null,
     });
+    const [customers, setCustomers] = useState([]); // API'den gelen müşteri verilerini saklamak için bir state
+    useEffect(() => {
+        const fetchCustomers = async () => {
+            try {
+                const response = await api.get("/customers"); // api modülünü kullanarak isteği yapın
+                setCustomers(response.data);
+                console.log(response.data);
+            } catch (error) {
+                console.error("Error fetching options:", error);
+            }
+        };
+        fetchCustomers();
+    }, []);
+    const getCustomTileContent = (date: Date) => {
 
+        const birthdayDate = new Date('2023-10-04');
+
+
+        if (isSameDay(date, birthdayDate)) {
+            return <span style={{ color: 'red' }}>Bugün Doğum Günü</span>;
+        }
+
+        return null;
+    };
     useEffect(() => {
         if (date.dateTime) {
             localStorage.setItem('selectedTime', date.dateTime.toISOString());
@@ -43,26 +69,35 @@ const CalendarComponent: FC<CalendarProps> = ({ closedDays }) => {
 
     return (
         <Box>
-            <div className='flex h-screen flex-col items-center justify-center'>
-            {date.justDate ? (
-                <div className='flex max-w-lg flex-wrap gap-4'>
-                    {times?.map((time, i) => (
-                        <div className='rounded-sm bg-gray-100 p-2' key={`time-${i}`}>
-                            <button onClick={() => setDate((prev) => ({ ...prev, dateTime: time }))} type='button'>
-                                {format(time, 'kk:mm')}
-                            </button>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <DynamicCalendar
-                    minDate={nowDate}
-                    className='REACT-CALENDAR p-2'
-                    view='month'
-                    tileDisabled={({ date }) => closedDays.includes(formatISO(date))}
-                    onClickDay={(date) => setDate((prev) => ({ ...prev, justDate: date }))}
-                />
-            )}
+            <div  style={{display: "flex",
+                justifyContent: "center",}}>
+                {date.justDate ? (
+                    <div className='flex max-w-lg flex-wrap gap-4'>
+                        {times?.map((time, i) => (
+                            <div className='rounded-sm bg-gray-100 p-2' key={`time-${i}`}>
+                                <button onClick={() => setDate((prev) => ({ ...prev, dateTime: time }))} type='button'>
+                                    {format(time, 'kk:mm')}
+                                </button>
+
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <DynamicCalendar
+                        minDate={nowDate}
+                        className='REACT-CALENDAR p-2'
+                        view='month'
+                        tileDisabled={({ date }) => closedDays.includes(formatISO(date))}
+                        onClickDay={(date) => setDate((prev) => ({ ...prev, justDate: date }))}
+                        tileContent={({ date, view }) =>
+                            view === 'month' ? (
+                                <div className='custom-tile-content'>
+                                    {getCustomTileContent(date)} {/* Özel etiketi görüntüle */}
+                                </div>
+                            ) : null
+                        }
+                    />
+                )}
         </div>
         </Box>
 
