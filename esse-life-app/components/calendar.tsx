@@ -9,6 +9,7 @@ import './calendar.css'
 import {Box} from "@mui/system";
 import axios from "axios";
 import api from '@/service/api';
+import DayPopupComponent from "@/components/dayPopup";
 
 
 const DynamicCalendar = dynamic(() => import('react-calendar'), { ssr: false })
@@ -19,15 +20,23 @@ interface CalendarProps {
 }
 
 const CalendarComponent: FC<CalendarProps> = ({ closedDays }) => {
-
     const openingTime = '08:00';
-    const closingTime = '18:00';
-
+    const closingTime = '21:00';
 
     const nowDate = new Date();
     const roundedNow = roundToNearestMinutes(nowDate, OPENING_HOURS_INTERVAL);
     const closing = parse(closingTime, 'kk:mm', nowDate);
     const tooLate = !isBefore(roundedNow, closing);
+    const [isPopupOpen, setPopupOpen] = useState(false);
+    const [reservations, setReservations] = useState<Reservation[]>([]);
+    const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+
+    if (tooLate) closedDays.push(formatISO(new Date().setHours(0, 0, 0, 0)));
+
+    const [date, setDate] = useState<DateTime>({
+        justDate: null,
+        dateTime: null,
+    });
     interface Reservation {
         id: number;
         customerName: string;
@@ -36,30 +45,26 @@ const CalendarComponent: FC<CalendarProps> = ({ closedDays }) => {
         reservationDate: string;
         reservationTime: string;
     }
-
-    const [reservations, setReservations] = useState<Reservation[]>([]);
-    if (tooLate) closedDays.push(formatISO(new Date().setHours(0, 0, 0, 0)));
-
-    const [date, setDate] = useState<DateTime>({
-        justDate: null,
-        dateTime: null,
-    });
     const getColorByConsultant = (consultant: string) => {
         if (consultant === 'CONSULTANT_A') {
             return 'yellow';
         } else if (consultant === 'CONSULTANT_B') {
             return 'pink';
-        }else if (consultant === 'CONSULTANT_C') {
+        } else if (consultant === 'CONSULTANT_C') {
             return 'cyan';
-        }
-        else {
+        } else {
             return 'transparent';
         }
+    };
+    const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
+
+    const filterReservationsByConsultant = (reservations: Reservation[], consultant: string) => {
+        return reservations.filter((reservation) => reservation.consultant === consultant);
     };
     useEffect(() => {
         const fetchCustomers = async () => {
             try {
-                const response = await api.get("/reservations"); // api modülünü kullanarak isteği yapın
+                const response = await api.get("/reservations");
                 setReservations(response.data);
                 console.log(response.data);
             } catch (error) {
@@ -73,7 +78,7 @@ const CalendarComponent: FC<CalendarProps> = ({ closedDays }) => {
         const matchingReservations = reservations
             .filter((reservation) => {
                 const reservationDate = new Date(reservation.reservationDate);
-                return isSameDay(date, reservationDate);
+                return isSameDay(date, reservationDate) && (!selectedConsultant || reservation.consultant === selectedConsultant);
             })
             .sort((a, b) => {
                 return a.reservationTime.localeCompare(b.reservationTime);
@@ -108,38 +113,40 @@ const CalendarComponent: FC<CalendarProps> = ({ closedDays }) => {
 
     return (
         <Box>
-            <div  style={{display: "flex",
-                justifyContent: "center",}}>
-                {date.justDate ? (
-                    <div className='flex max-w-lg flex-wrap gap-4'>
-                        {times?.map((time, i) => (
-                            <div className='rounded-sm bg-gray-100 p-2' key={`time-${i}`}>
-                                <button onClick={() => setDate((prev) => ({ ...prev, dateTime: time }))} type='button'>
-                                    {format(time, 'kk:mm')}
-                                </button>
-
+            <select onChange={(e) => setSelectedConsultant(e.target.value)}>
+                <option value="">Tüm Danışmanlar</option>
+                <option value="CONSULTANT_A">Danışman A</option>
+                <option value="CONSULTANT_B">Danışman B</option>
+                <option value="CONSULTANT_C">Danışman C</option>
+            </select>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <DynamicCalendar
+                    minDate={nowDate}
+                    className='REACT-CALENDAR p-2'
+                    view='month'
+                    tileDisabled={({ date }) => closedDays.includes(formatISO(date))}
+                    onClickDay={(date) => {
+                        setDate((prev) => ({ ...prev, justDate: date }));
+                        setSelectedDay(date);
+                        setPopupOpen(true);
+                    }}
+                    tileContent={({ date, view }) =>
+                        view === 'month' ? (
+                            <div className='custom-tile-content'>
+                                {getCustomTileContent(date)}
                             </div>
-                        ))}
-                    </div>
-                ) : (
-                    <DynamicCalendar
-                        minDate={nowDate}
-                        className='REACT-CALENDAR p-2'
-                        view='month'
-                        tileDisabled={({ date }) => closedDays.includes(formatISO(date))}
-                        onClickDay={(date) => setDate((prev) => ({ ...prev, justDate: date }))}
-                        tileContent={({ date, view }) =>
-                            view === 'month' ? (
-                                <div className='custom-tile-content'>
-                                    {getCustomTileContent(date)}
-                                </div>
-                            ) : null
-                        }
-                    />
-                )}
-        </div>
+                        ) : null
+                    }
+                />
+                {isPopupOpen && (
+                    <DayPopupComponent
+                        isOpen={isPopupOpen}
+                        onClose={() => setPopupOpen(false)}
+                        selectedDay={selectedDay} // Seçilen günü DayPopupComponent'e iletiyoruz
+                        reservations={reservations} // Rezervasyonları DayPopupComponent'e iletiyoruz
+                    />                )}
+            </div>
         </Box>
-
     );
 };
 
