@@ -5,7 +5,7 @@ export default function Home() {
     return (
         <main>
             <div>
-                Ana Sayfa
+                <CalendarComponent closedDays={[]} />
             </div>
         </main>
     )

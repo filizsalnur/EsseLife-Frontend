@@ -66,7 +66,6 @@ const CalendarComponent: FC<CalendarProps> = ({ closedDays }) => {
             try {
                 const response = await api.get("/reservations");
                 setReservations(response.data);
-                console.log(response.data);
             } catch (error) {
                 console.error("Error fetching options:", error);
             }
@@ -146,9 +145,11 @@ const CalendarComponent: FC<CalendarProps> = ({ closedDays }) => {
                         reservations={
                             selectedConsultant
                                 ? filterReservationsByConsultant(reservations, selectedConsultant)
-                                : reservations // Danışman seçilmediyse tüm rezervasyonları göster
+                                : reservations
                         }
-                    />             )}
+
+                    />
+                )}
             </div>
         </Box>
     );
