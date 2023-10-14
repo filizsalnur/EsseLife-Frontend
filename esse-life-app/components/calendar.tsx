@@ -31,6 +31,8 @@ const CalendarComponent: FC<CalendarProps> = ({ closedDays }) => {
     const [reservations, setReservations] = useState<Reservation[]>([]);
     const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
+
+
     if (tooLate) closedDays.push(formatISO(new Date().setHours(0, 0, 0, 0)));
 
     const [date, setDate] = useState<DateTime>({
