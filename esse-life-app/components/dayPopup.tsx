@@ -1,6 +1,9 @@
 import React, { FC, useState } from 'react';
 import { isSameDay } from 'date-fns';
+import { parseISO, add, set } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
 import axios from 'axios';
+import moment from 'moment'; // Import moment
 import api from "@/service/api";
 interface DayPopupProps {
     isOpen: boolean;
@@ -26,15 +29,18 @@ interface NewReservation {
 }
 
 const DayPopupComponent: FC<DayPopupProps> = ({ isOpen, onClose, selectedDay, reservations }) => {
+    const [isFormOpen,setFormOpen]=useState(false);
     const reservationsForSelectedDay = selectedDay
         ? reservations.filter((reservation) => {
             const reservationDate = new Date(reservation.reservationDate);
             return isSameDay(selectedDay, reservationDate);
         })
         : [];
-    const parsedDate = new Date(selectedDay);
-    parsedDate.setDate(parsedDate.getDate() + 1);
-    const selectedDayFormatted = selectedDay ? selectedDay.toISOString().split('T')[0] : '';
+
+
+        const parsedDate = moment(selectedDay).add(1, 'days');
+        const selectedDayFormatted = moment(selectedDay).format('YYYY-MM-DD');
+
     const [newReservation, setNewReservation] = useState<NewReservation>({
         consultant: '',
         customerName: '',
@@ -44,7 +50,6 @@ const DayPopupComponent: FC<DayPopupProps> = ({ isOpen, onClose, selectedDay, re
 
     const handleReservationSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log(newReservation);
         try {
             const response = await api.post('/reservations', newReservation);
 
@@ -59,7 +64,6 @@ const DayPopupComponent: FC<DayPopupProps> = ({ isOpen, onClose, selectedDay, re
             console.error('Bir hata oluştu:', error);
         }
     };
-
 
     return (
         <div className={`popup-container ${isOpen ? 'open' : ''}`}>
@@ -79,7 +83,16 @@ const DayPopupComponent: FC<DayPopupProps> = ({ isOpen, onClose, selectedDay, re
                         ) : (
                             <p>Bu tarih için randevu bulunmamaktadır.</p>
                         )}
-                        <h2>Yeni Rezervasyon Ekle</h2>
+
+                    </>
+                ) : (
+                    <p>Bir gün seçilmedi.</p>
+                )}
+                <button onClick={onClose}>Kapat</button>
+                <button onClick={() => setFormOpen(true)}>Add Reservation</button>
+
+                {isFormOpen && (
+                    <div> <h2>Yeni Rezervasyon Ekle</h2>
                         <form onSubmit={handleReservationSubmit}>
                             <div>
                                 <label>Danışman:</label>
@@ -113,12 +126,8 @@ const DayPopupComponent: FC<DayPopupProps> = ({ isOpen, onClose, selectedDay, re
                                 />
                             </div>
                             <button type="submit">Rezervasyon Ekle</button>
-                        </form>
-                    </>
-                ) : (
-                    <p>Bir gün seçilmedi.</p>
+                        </form></div>
                 )}
-                <button onClick={onClose}>Kapat</button>
             </div>
         </div>
     );
