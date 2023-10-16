@@ -5,6 +5,19 @@ import { utcToZonedTime } from 'date-fns-tz';
 import axios from 'axios';
 import moment from 'moment'; // Import moment
 import api from "@/service/api";
+import Button from '@mui/material/Button';
+import {
+    Dialog,
+    DialogContent,
+    FormControl,
+    IconButton,
+    Input,
+    InputLabel,
+    MenuItem,
+    Select,
+    Typography
+} from "@mui/material";
+import {CloseIcon} from "next/dist/client/components/react-dev-overlay/internal/icons/CloseIcon";
 interface DayPopupProps {
     isOpen: boolean;
     onClose: () => void;
@@ -66,70 +79,92 @@ const DayPopupComponent: FC<DayPopupProps> = ({ isOpen, onClose, selectedDay, re
     };
 
     return (
-        <div className={`popup-container ${isOpen ? 'open' : ''}`}>
-            <div className={`popup ${isOpen ? 'open' : ''}`}>
-                {selectedDay ? (
-                    <>
-                        <p>Tıklanan günün tarihi: {selectedDay.toDateString()}</p>
-                        <h2>Rezervasyonlar:</h2>
-                        {reservationsForSelectedDay.length > 0 ? (
-                            <ul>
-                                {reservationsForSelectedDay.map((reservation) => (
-                                    <li key={reservation.id}>
-                                        Saat: {reservation.reservationTime}, Müşteri: {reservation.customerName}, Danışman: {reservation.consultant}
-                                    </li>
-                                ))}
-                            </ul>
+        <Dialog open={isOpen} onClose={onClose} maxWidth="xs">
+            <DialogContent>
+                <div className="popup-container">
+                    <div className="popup">
+                        <IconButton
+                            edge="end"
+                            color="inherit"
+                            onClick={onClose}
+                            style={{ position: 'absolute', top: 0, right: 0 }}
+                        >
+                            <CloseIcon />
+                        </IconButton>
+                        <Typography variant="h6" component="div">
+                            {selectedDay ? (
+                                `Tıklanan günün tarihi: ${selectedDay.toDateString()}`
+                            ) : (
+                                'Bir gün seçilmedi.'
+                            )}
+                        </Typography>
+                        {selectedDay ? (
+                            <>
+                                <p>Tıklanan günün tarihi: {selectedDay.toDateString()}</p>
+                                <h2>Rezervasyonlar:</h2>
+                                {reservationsForSelectedDay.length > 0 ? (
+                                    <ul>
+                                        {reservationsForSelectedDay.map((reservation) => (
+                                            <li key={reservation.id}>
+                                                Saat: {reservation.reservationTime}, Müşteri: {reservation.customerName}, Danışman: {reservation.consultant}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p>Bu tarih için randevu bulunmamaktadır.</p>
+                                )}
+
+                            </>
                         ) : (
-                            <p>Bu tarih için randevu bulunmamaktadır.</p>
+                            <p>Bir gün seçilmedi.</p>
                         )}
+                        <Button onClick={() => setFormOpen(!isFormOpen)} variant="contained" color="primary">
+                            Add Reservation
+                        </Button>
+                        {isFormOpen && (
+                            <div>
 
-                    </>
-                ) : (
-                    <p>Bir gün seçilmedi.</p>
-                )}
-                <button onClick={onClose}>Kapat</button>
-                <button onClick={() => setFormOpen(true)}>Add Reservation</button>
-
-                {isFormOpen && (
-                    <div> <h2>Yeni Rezervasyon Ekle</h2>
-                        <form onSubmit={handleReservationSubmit}>
-                            <div>
-                                <label>Danışman:</label>
-                                <select
-                                    name="consultant"
-                                    value={newReservation.consultant}
-                                    onChange={(e) => setNewReservation({ ...newReservation, consultant: e.target.value })}
-                                >
-                                    <option value="">Danışman Seçin</option>
-                                    <option value="CONSULTANT_A">Danışman A</option>
-                                    <option value="CONSULTANT_B">Danışman B</option>
-                                    <option value="CONSULTANT_C">Danışman C</option>
-                                </select>
+                                <h2>Yeni Rezervasyon Ekle</h2>
+                                <form onSubmit={handleReservationSubmit}>
+                                    <FormControl fullWidth>
+                                        <InputLabel>Danışman:</InputLabel>
+                                        <Select
+                                            name="consultant"
+                                            value={newReservation.consultant}
+                                            onChange={(e) => setNewReservation({ ...newReservation, consultant: e.target.value })}
+                                        >
+                                            <MenuItem value="">Danışman Seçin</MenuItem>
+                                            <MenuItem value="CONSULTANT_A">Danışman A</MenuItem>
+                                            <MenuItem value="CONSULTANT_B">Danışman B</MenuItem>
+                                            <MenuItem value="CONSULTANT_C">Danışman C</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                    <FormControl fullWidth>
+                                        <InputLabel>Müşteri Adı:</InputLabel>
+                                        <Input
+                                            type="text"
+                                            name="customerName"
+                                            value={newReservation.customerName}
+                                            onChange={(e) => setNewReservation({ ...newReservation, customerName: e.target.value })}
+                                        />
+                                    </FormControl>
+                                    <FormControl fullWidth>
+                                        <InputLabel>Rezervasyon Saati:</InputLabel>
+                                        <Input
+                                            type="text"
+                                            name="reservationTime"
+                                            value={newReservation.reservationTime}
+                                            onChange={(e) => setNewReservation({ ...newReservation, reservationTime: e.target.value })}
+                                        />
+                                    </FormControl>
+                                    <Button type="submit" variant="contained" color="primary">Rezervasyon Ekle</Button>
+                                </form>
                             </div>
-                            <div>
-                                <label>Müşteri Adı:</label>
-                                <input
-                                    type="text"
-                                    name="customerName"
-                                    value={newReservation.customerName}
-                                    onChange={(e) => setNewReservation({ ...newReservation, customerName: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label>Rezervasyon Saati:</label>
-                                <input
-                                    type="text"
-                                    name="reservationTime"
-                                    value={newReservation.reservationTime}
-                                    onChange={(e) => setNewReservation({ ...newReservation, reservationTime: e.target.value })}
-                                />
-                            </div>
-                            <button type="submit">Rezervasyon Ekle</button>
-                        </form></div>
-                )}
-            </div>
-        </div>
+                        )}
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
     );
 };
 
