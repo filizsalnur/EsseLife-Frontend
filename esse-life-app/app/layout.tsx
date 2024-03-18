@@ -1,3 +1,4 @@
+import ResponsiveAppBar from '@/components/appBar'
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
@@ -18,7 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-      <h1>APP BAR</h1>
+      <ResponsiveAppBar/>
       {children}
       <h2>FOOTER</h2></body>
     </html>
